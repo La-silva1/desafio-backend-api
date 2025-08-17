@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=desafiobackend
+    ports:
+      - '5432:5432'
+    volumes:
+      - docker-compose-data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: always
+    ports:
+      - '8080:8080'
+    depends_on:
+      - db
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=desafiobackend;Username=postgres;Password=postgres
+
+volumes:
+  docker-compose-data:

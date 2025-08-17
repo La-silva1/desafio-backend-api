@@ -33,13 +33,34 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+// Necessario para migração, e fazer retry até que o db esteja disponivel
+var maxRetries = 5;
+for (int i = 1; i <= maxRetries; i++)
 {
-    app.MapOpenApi();
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    try
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            dbContext.Database.Migrate();
+            logger.LogInformation("Migração realizada com sucesso.", i);
+            break;
+        }
+    }
+    catch (Npgsql.NpgsqlException ex) when (ex.InnerException is System.Net.Sockets.SocketException)
+    {
+        logger.LogWarning(ex, "Conexão com database falhou. Tentativa {Attempt} de {MaxRetries}. Refazendo em 5 segundos...", i, maxRetries);
+        if (i == maxRetries) throw;
+        System.Threading.Thread.Sleep(5000);
+    }
 }
+
+
+app.MapOpenApi();
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.UseAntiforgery();
