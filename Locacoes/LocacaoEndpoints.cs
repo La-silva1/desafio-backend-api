@@ -1,16 +1,13 @@
 using DesafioBackend.Locacoes;
 using DesafioBackend.Data;
-using DesafioBackend.Entregadores;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http; 
 
 namespace DesafioBackend.Locacoes;
 
 public static class LocacoesEndpoints
 {
-
     public static void AddEndpointsLocacoes(this WebApplication app)
     {
         var endpointsLocacoes = app.MapGroup(prefix: "locacao").WithTags("Locação");
@@ -19,14 +16,14 @@ public static class LocacoesEndpoints
             async ([FromBody] AddLocacaoRequest request, AppDbContext context) =>
             {
                 var service = new LocacoesService(context);
-                var resultado = await service.CreateLocacaoAsync(request);
+                var (newLocacao, errorMessage) = await service.CreateLocacao(request);
 
-                if (!resultado.IsSuccess)
-                {
-                    return Results.BadRequest(new { mensagem = resultado.ErrorMessage });
+                if (newLocacao == null)
+                { 
+                    return Results.BadRequest(new { mensagem = errorMessage });
                 }
 
-                return Results.Created($"/locacao/{resultado.Locacao!.EntregadorId}", resultado.Locacao);
+                return Results.Created($"/locacao/{newLocacao.EntregadorId}", newLocacao);
             })
         .WithSummary("Alugar uma moto");
 
@@ -34,14 +31,14 @@ public static class LocacoesEndpoints
         async ([FromRoute] string id, AppDbContext context) =>
         {
             var service = new LocacoesService(context);
-            var locacaoDto = await service.GetLocacaoByIdAsync(id);
+            var (locacao, errorMessage) = await service.GetLocacaoById(id);
 
-            if (locacaoDto == null)
+            if (locacao == null)
             {
-                return Results.NotFound("Locação não encontrada");
+                return Results.NotFound(new { mensagem = errorMessage });
             }
 
-            return Results.Ok(locacaoDto);
+            return Results.Ok(locacao);
         })
         .WithSummary("Consultar locação pelo ID");
 
@@ -50,18 +47,21 @@ public static class LocacoesEndpoints
             async ([FromRoute] string id, [FromBody] DevolverMotoRequest request, AppDbContext context) =>
             {
                 var service = new LocacoesService(context);
-                var resultado = await service.DevolverMotoAsync(id, request);
+                var (custoTotal, errorMessage) = await service.DevolverMoto(id, request);
 
-                if (resultado.Status == LocacoesService.DevolucaoStatus.NotFound)
+                if (custoTotal == null)
                 {
-                    return Results.NotFound(resultado.ErrorMessage);
-                }
-                else if (resultado.Status == LocacoesService.DevolucaoStatus.InvalidPlan)
-                {
-                    return Results.BadRequest(resultado.ErrorMessage);
+                     if (errorMessage!.Contains("Locação não encontrada"))
+                    {
+                        return Results.NotFound(new { mensagem = errorMessage });
+                    }
+                    else
+                    {
+                        return Results.BadRequest(new { mensagem = errorMessage });
+                    }
                 }
 
-                return Results.Ok(new { CustoTotal = resultado.CustoTotal });
+                return Results.Ok(new { CustoTotal = custoTotal });
             })
         .WithSummary("Informar data de devolução e calcular valor");
     }

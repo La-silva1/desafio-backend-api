@@ -13,26 +13,21 @@ namespace DesafioBackend.Motos
             _context = context;
         }
 
-        public async Task<Moto?> CreateMoto(AddMotoRequest request)
+        public async Task<(Moto? Moto, string? ErrorMessage)> CreateMoto(AddMotoRequest request)
         {
-            var jaCadastrado = await _context.Motos
-            .AnyAsync(moto => moto.Placa == request.Placa);
+            var placaJaCadastrada = await _context.Motos
+                .AnyAsync(moto => moto.Placa == request.Placa);
 
-            if (jaCadastrado)
+            if (placaJaCadastrada)
             {
-                return null;
+                return (null, "Placa já cadastrada.");
             }
 
             var newMoto = new Moto(request.Ano, request.Modelo, request.Placa);
             await _context.Motos.AddAsync(newMoto);
             await _context.SaveChangesAsync();
 
-            if (request.Ano == 2024)
-            {
-                Console.WriteLine($" Moto 2024 cadastrada: {request.Modelo} - {request.Placa}");
-            }
-
-            return newMoto;
+            return (newMoto, null);
         }
 
 
@@ -47,20 +42,28 @@ namespace DesafioBackend.Motos
             return motos;
         }
 
-        public async Task<Moto?> UpDateMotos(Guid id, UpdateMotoRequest request)
+        public async Task<(Moto? Moto, string? ErrorMessage)> UpDateMotos(Guid id, UpdateMotoRequest request)
         {
             var moto = await _context.Motos
-            .SingleOrDefaultAsync(moto => moto.Id == id);
+                .SingleOrDefaultAsync(moto => moto.Id == id);
 
             if (moto == null)
             {
-                return null;
+                return (null, "Moto não encontrada!");
+            }
+
+            var placaJaCadastrada = await _context.Motos
+            .AnyAsync(moto => moto.Placa == request.Placa && moto.Id != id);
+
+            if (placaJaCadastrada)
+            {
+                return (null, "Placa já cadastrada para outra moto.");
             }
 
             moto.ModificarPlaca(request.Placa);
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-            return moto;
+            return (moto, null);
         }
 
         public async Task<Moto?> GetMotoById(Guid id)
@@ -74,33 +77,30 @@ namespace DesafioBackend.Motos
 
             return moto;
         }
-        public async Task<DeleteResult> DeleteMoto(Guid id)
+        public async Task<(int? Codigo, string? ErrorMessage)> DeleteMoto(Guid id)
         {
             var moto = await _context.Motos
                 .SingleOrDefaultAsync(moto => moto.Id == id);
 
             if (moto == null)
             {
-                return DeleteResult.NotFound;
+                 return (404, "Moto não encontrada!");
             }
-            var locacoesAssociadas = await _context.Locacoes.AnyAsync(locacao => locacao.MotoId == moto.Id);
+            var locacoesAssociadas = await _context.Locacoes
+            .AnyAsync(locacao => locacao.MotoId == moto.Id);
 
             if (locacoesAssociadas)
             {
-                return DeleteResult.HasAssociatedRentals;
+                return (400, "Esta moto não pode ser excluída pois possui locações associadas.");           
             }
+
             _context.Motos.Remove(moto);
             await _context.SaveChangesAsync();
 
-            return DeleteResult.Success;
+            return (200, null);
 
         }
 
     }
-    public enum DeleteResult
-    {
-        Success,
-        NotFound,
-        HasAssociatedRentals
-    }
+
 }

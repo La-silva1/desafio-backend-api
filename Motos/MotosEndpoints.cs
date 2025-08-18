@@ -16,14 +16,19 @@ public static class MotosEndpoints
             async ([FromBody] AddMotoRequest request, AppDbContext context) =>
         {
             var service = new MotosService(context);
-            var newMoto = await service.CreateMoto(request);
+            var (newMoto, errorMessage) = await service.CreateMoto(request);
 
-            if (newMoto == null)
+            if (newMoto != null)
             {
-                return Results.Conflict("Moto já cadastrada");
+                return Results.Created($"/motos/{newMoto.Id}", newMoto);
             }
-
-            return Results.Created($"/motos/{newMoto.Id}", newMoto);
+            if (errorMessage!.Contains("já cadastrada", StringComparison.OrdinalIgnoreCase) ||
+                errorMessage!.Contains("já cadastrado", StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.Conflict(new { mensagem = errorMessage });
+            }
+        
+            return Results.BadRequest(new { mensagem = errorMessage });
         })
         .WithSummary("Cadastrar uma nova moto");
 
@@ -42,13 +47,11 @@ public static class MotosEndpoints
             async (Guid id, UpdateMotoRequest request, AppDbContext context) =>
             {
                 var service = new MotosService(context);
-                var motoAtualizada = await service.UpDateMotos(id, request);
-                
+                var (motoAtualizada, errorMessage) = await service.UpDateMotos(id, request);
                 if (motoAtualizada == null)
                 {
-                    return Results.BadRequest(new { mensagem = "dados inválidos" });
+                    return Results.BadRequest(new { mensagem = errorMessage });
                 }
-
                 return Results.Ok(new { mensagem = "placa modificada com sucesso", moto = motoAtualizada });
             })
              .WithSummary("Modificar a placa de uma moto");
@@ -56,10 +59,8 @@ public static class MotosEndpoints
         endpointsMotos.MapGet("{id:Guid}",
             async (Guid id, AppDbContext context) =>
             {
-
                 var service = new MotosService(context);
                 var moto = await service.GetMotoById(id);
-
                 if (moto == null)
                 {
                     return Results.NotFound(new { mensagem = "moto não encontrada" });
@@ -72,15 +73,14 @@ public static class MotosEndpoints
         async (Guid id, AppDbContext context) =>
         {
             var service = new MotosService(context);
-            var resultado = await service.DeleteMoto(id);
-            if (resultado == DeleteResult.NotFound)
+            var (codigo, errorMessage) = await service.DeleteMoto(id);
+            if (codigo == 404)
             {
-                return Results.NotFound(new { mensagem = "Moto não encontrada." });
+                return Results.NotFound(new { mensagem = errorMessage });
             }
-
-            else if (resultado == DeleteResult.HasAssociatedRentals)
+            else if (codigo == 400)
             {
-                return Results.BadRequest(new { mensagem = "Moto com locações associadas, não pode ser removida." });
+                return Results.BadRequest(new { mensagem = errorMessage });
             }
             return Results.Ok();
         })

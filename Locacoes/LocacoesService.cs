@@ -3,197 +3,155 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using DesafioBackend.Data;
-using DesafioBackend.Locacoes;
 
-public class LocacoesService
+namespace DesafioBackend.Locacoes
 {
-    private readonly AppDbContext _context;
-    private static readonly Dictionary<string, (int duracaoDias, decimal custoDiario)> Planos =
-        new Dictionary<string, (int duracaoDias, decimal custoDiario)>
-        {
-            { "7 dias", (7, 30.00m) },
-            { "15 dias", (15, 28.00m) },
-            { "30 dias", (30, 22.00m) },
-            { "45 dias", (45, 20.00m) },
-            { "50 dias", (50, 18.00m) }
-        };
-
-    private static readonly Dictionary<string, decimal> CustosMulta =
-        new Dictionary<string, decimal>
-        {
-            { "7 dias", 50.00m },
-            { "15 dias", 50.00m },
-            { "30 dias", 50.00m },
-            { "45 dias", 50.00m },
-            { "50 dias", 50.00m }
-        };
-
-    public LocacoesService(AppDbContext context)
+    public class LocacoesService
     {
-        _context = context;
-    }
+        private readonly AppDbContext _context;
+        private static readonly Dictionary<string, (int duracaoDias, decimal custoDiario)> Planos =
+            new Dictionary<string, (int duracaoDias, decimal custoDiario)>
+            {
+                { "7 dias", (7, 30.00m) },
+                { "15 dias", (15, 28.00m) },
+                { "30 dias", (30, 22.00m) },
+                { "45 dias", (45, 20.00m) },
+                { "50 dias", (50, 18.00m) }
+            };
 
-    public class LocacaoCreationResult
-    {
-        public Locacao? Locacao { get; set; }
-        public string? ErrorMessage { get; set; }
-        public bool IsSuccess => Locacao != null && ErrorMessage == null;
-    }
+        private static readonly Dictionary<string, decimal> CustosMulta =
+            new Dictionary<string, decimal>
+            {
+                { "7 dias", 50.00m },
+                { "15 dias", 50.00m },
+                { "30 dias", 50.00m },
+                { "45 dias", 50.00m },
+                { "50 dias", 50.00m }
+            };
 
-    public class LocacaoResponseDto
-    {
-        public string? IdLocacao { get; set; }
-        public decimal ValorDiaria { get; set; }
-        public Guid IdEntregador { get; set; }
-        public Guid IdMoto { get; set; }
-        public DateTime DataInicio { get; set; }
-        public DateTime DataTermino { get; set; }
-        public DateTime DataPrevisaoDevolucao { get; set; }
-    }
-
-    public class DevolucaoResult
-    {
-        public DevolucaoStatus Status { get; set; }
-        public decimal CustoTotal { get; set; }
-        public string? ErrorMessage { get; set; }
-    }
-
-    public enum DevolucaoStatus
-    {
-        Success,
-        NotFound,
-        InvalidPlan
-    }
-
-    public async Task<LocacaoCreationResult> CreateLocacaoAsync(AddLocacaoRequest request)
-    {
-        var entregador = await _context.Entregadores.FindAsync(request.EntregadorId);
-        if (entregador == null)
+        public LocacoesService(AppDbContext context)
         {
-            return new LocacaoCreationResult { ErrorMessage = $"Entregador com ID '{request.EntregadorId}' não encontrado." };
+            _context = context;
         }
 
-        var moto = await _context.Motos.FindAsync(request.MotoId);
-        if (moto == null)
+        public async Task<(Locacao? Locacao, string? ErrorMessage)> CreateLocacao(AddLocacaoRequest request)
         {
-            return new LocacaoCreationResult { ErrorMessage = $"Moto com ID '{request.MotoId}' não encontrada." };
+            var entregador = await _context.Entregadores.FindAsync(request.EntregadorId);
+            if (entregador == null)
+            {
+                return (null, $"Entregador com ID '{request.EntregadorId}' não encontrado.");
+            }
+
+            var moto = await _context.Motos.FindAsync(request.MotoId);
+            if (moto == null)
+            {
+                return (null, $"Moto com ID '{request.MotoId}' não encontrada.");
+            }
+
+            if (!entregador.TipoCNH.Contains("A"))
+            {
+                return (null, "Entregador não habilitado para locação de motos. Apenas entregadores com CNH categoria 'A' podem alugar.");
+            }
+
+            if (string.IsNullOrEmpty(request.Plano) || !Planos.ContainsKey(request.Plano))
+            {
+                return (null, "Plano de locação inválido. Esolha entre 7, 15, 30, 45 e 50 dias");
+            }
+
+            var (duracaoDias, custoDiario) = Planos[request.Plano];
+            var dataInicioLocacao = DateTime.Today.AddDays(1);
+            var dataPrevisaoTermino = dataInicioLocacao.AddDays(duracaoDias);
+
+            var newLocacao = new Locacao(
+                entregador.Id,
+                moto.Id,
+                dataInicioLocacao.ToUniversalTime(),
+                dataPrevisaoTermino.ToUniversalTime(),
+                dataPrevisaoTermino.ToUniversalTime(),
+                request.Plano
+            );
+
+            await _context.Locacoes.AddAsync(newLocacao);
+            await _context.SaveChangesAsync();
+
+            return (newLocacao, null);
         }
 
-        if (!entregador.TipoCNH.Contains("A"))
+        public async Task<(Locacao? Locacao, string? ErrorMessage)> GetLocacaoById(string id)
         {
-            return new LocacaoCreationResult { ErrorMessage = "Entregador não habilitado para locação de motos. Apenas entregadores com CNH categoria 'A' podem alugar." };
+            var locacao = await _context.Locacoes.FirstOrDefaultAsync(l => l.Id == id);
+
+            if (locacao == null)
+            {
+                return (null, "Locação não encontrada.");
+            }
+
+            if (string.IsNullOrEmpty(locacao.Plano) || !Planos.ContainsKey(locacao.Plano))
+            {
+                return (null, "Plano de locação inválido ou não encontrado.");
+            }
+
+            return (locacao, null);
         }
 
-        if (string.IsNullOrEmpty(request.Plano) || !Planos.ContainsKey(request.Plano))
+        public async Task<(decimal? CustoTotal, string? ErrorMessage)> DevolverMoto(string id, DevolverMotoRequest request)
         {
-            return new LocacaoCreationResult { ErrorMessage = "Plano de locação inválido." };
+            var locacao = await _context.Locacoes.FirstOrDefaultAsync(l => l.Id == id);
+
+            if (locacao == null)
+            {
+                return (null, "Locação não encontrada.");
+            }
+
+            if (string.IsNullOrEmpty(locacao.Plano) || !Planos.ContainsKey(locacao.Plano))
+            {
+                return (null, "Plano de locação inválido.");
+            }
+
+            var (duracaoDias, custoDiario) = Planos[locacao.Plano];
+            var custoMultaDiaria = CustosMulta[locacao.Plano];
+
+            decimal custoTotal = 0;
+            decimal multaAdicional = 0;
+
+            var duracaoReal = (request.DataTermino - locacao.DataInicio).TotalDays;
+
+            if (request.DataTermino < locacao.DataPrevisaoTermino)
+            {
+                multaAdicional = GetValorMultaAdicional(locacao.DataPrevisaoTermino, request.DataTermino, custoDiario, locacao.Plano);
+                custoTotal = ((decimal)duracaoReal * custoDiario) + multaAdicional;
+            }
+            else
+            {
+                var diasAtraso = (request.DataTermino - locacao.DataPrevisaoTermino).TotalDays;
+                custoTotal = (duracaoDias * custoDiario) + ((decimal)diasAtraso * custoMultaDiaria);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return (custoTotal, null);
         }
 
-        var (duracaoDias, custoDiario) = Planos[request.Plano];
-        var dataInicioLocacao = DateTime.Today.AddDays(1);
-        var dataPrevisaoTermino = dataInicioLocacao.AddDays(duracaoDias);
-
-        var newLocacao = new Locacao(
-            entregador.Id,
-            moto.Id,
-            dataInicioLocacao.ToUniversalTime(),
-            dataPrevisaoTermino.ToUniversalTime(),
-            dataPrevisaoTermino.ToUniversalTime(),
-            request.Plano
-        );
-
-        await _context.Locacoes.AddAsync(newLocacao);
-        await _context.SaveChangesAsync();
-
-        return new LocacaoCreationResult { Locacao = newLocacao };
-    }
-
-    public async Task<LocacaoResponseDto?> GetLocacaoByIdAsync(string id)
-    {
-        var locacao = await _context.Locacoes.FirstOrDefaultAsync(l => l.Id == id);
-
-        if (locacao == null)
+        private decimal GetValorMultaAdicional(DateTime previsaoTermino, DateTime dataTermino, decimal custoDiario, string plano)
         {
-            return null;
+            var diasNaoEfetivados = (previsaoTermino - dataTermino).TotalDays;
+            decimal valorDiariasNaoEfetivadas = (decimal)diasNaoEfetivados * custoDiario;
+            decimal multaAdicional = 0;
+
+            if (plano == "7 dias")
+            {
+                multaAdicional = valorDiariasNaoEfetivadas * 0.20m;
+            }
+            else if (plano == "15 dias")
+            {
+                multaAdicional = valorDiariasNaoEfetivadas * 0.40m;
+            }
+            else
+            {
+                multaAdicional = valorDiariasNaoEfetivadas * 0.20m;
+            }
+
+            return multaAdicional;
         }
-
-        if (string.IsNullOrEmpty(locacao.Plano) || !Planos.ContainsKey(locacao.Plano))
-        {
-            return null;
-        }
-
-        var (duracaoDias, custoDiario) = Planos[locacao.Plano];
-
-        return new LocacaoResponseDto
-        {
-            IdLocacao = locacao.Id,
-            ValorDiaria = custoDiario,
-            IdEntregador = locacao.EntregadorId,
-            IdMoto = locacao.MotoId,
-            DataInicio = locacao.DataInicio,
-            DataTermino = locacao.DataTermino,
-            DataPrevisaoDevolucao = locacao.DataPrevisaoTermino
-        };
-    }
-
-    public async Task<DevolucaoResult> DevolverMotoAsync(string id, DevolverMotoRequest request)
-    {
-        var locacao = await _context.Locacoes.FirstOrDefaultAsync(l => l.Id == id);
-
-        if (locacao == null)
-        {
-            return new DevolucaoResult { Status = DevolucaoStatus.NotFound, ErrorMessage = "Locação não encontrada." };
-        }
-
-        if (string.IsNullOrEmpty(locacao.Plano) || !Planos.ContainsKey(locacao.Plano))
-        {
-            return new DevolucaoResult { Status = DevolucaoStatus.InvalidPlan, ErrorMessage = "Plano de locação inválido." };
-        }
-
-        var (duracaoDias, custoDiario) = Planos[locacao.Plano];
-        var custoMultaDiaria = CustosMulta[locacao.Plano];
-
-        decimal custoTotal = 0;
-        decimal multaAdicional = 0;
-
-        var duracaoReal = (request.DataTermino - locacao.DataInicio).TotalDays;
-
-        if (request.DataTermino < locacao.DataPrevisaoTermino)
-        {
-            multaAdicional = GetValorMultaAdicional(locacao.DataPrevisaoTermino, request.DataTermino, custoDiario, locacao.Plano);
-            custoTotal = ((decimal)duracaoReal * custoDiario) + multaAdicional;
-        }
-        else
-        {
-            var diasAtraso = (request.DataTermino - locacao.DataPrevisaoTermino).TotalDays;
-            custoTotal = (duracaoDias * custoDiario) + ((decimal)diasAtraso * custoMultaDiaria);
-        }
-
-        locacao.FinalizarLocacao(request.DataTermino, custoTotal);
-        await _context.SaveChangesAsync();
-
-        return new DevolucaoResult { Status = DevolucaoStatus.Success, CustoTotal = custoTotal };
-    }
-
-    private decimal GetValorMultaAdicional(DateTime previsaoTermino, DateTime dataTermino, decimal custoDiario, string plano)
-    {
-        var diasNaoEfetivados = (previsaoTermino - dataTermino).TotalDays;
-        decimal valorDiariasNaoEfetivadas = (decimal)diasNaoEfetivados * custoDiario;
-        var multaAdicional = (decimal)0;
-
-        if (plano == "7 dias")
-        {
-            multaAdicional = valorDiariasNaoEfetivadas * 0.20m;
-        }
-        else if (plano == "15 dias")
-        {
-            multaAdicional = valorDiariasNaoEfetivadas * 0.40m;
-        }
-        else
-        {
-            multaAdicional = valorDiariasNaoEfetivadas * 0.20m;
-        }
-
-        return multaAdicional;
     }
 }
