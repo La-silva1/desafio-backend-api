@@ -16,8 +16,7 @@ Com o Docker e o Docker Compose instalados, siga os passos abaixo para executar 
 1.  **Clone o Repositório** (caso ainda não tenha feito):
     ```bash
     gh repo clone La-silva1/desafio-backend-api
-    cd DesafioBackend
-
+    
 2.  **Construa e Inicie os Contêineres:**
     Na pasta raiz do projeto, execute o seguinte comando:
     ```bash
