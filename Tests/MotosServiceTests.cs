@@ -18,23 +18,19 @@ public class MotosServiceTests
     [Fact]
     public async Task CreateMoto_ShouldAddNewMoto_WhenPlacaIsUnique()
     {
-        // Arrange
         var options = CreateNewContextOptions("TestDb_CreateSuccess");
         var request = new AddMotoRequest("Honda Titan", "ABC1234", 2022);
 
-        // Act
         using (var context = new AppDbContext(options))
         {
             var service = new MotosService(context);
             var (result, errorMessage) = await service.CreateMoto(request);
             
-            // Assert
             Assert.Null(errorMessage);
             Assert.NotNull(result);
             Assert.Equal(request.Ano, result.Ano);
         }
 
-        // Assert - verify in a separate context to ensure it was saved
         using (var context = new AppDbContext(options))
         {
             var motoInDb = await context.Motos.SingleOrDefaultAsync(m => m.Placa == "ABC1234");
@@ -46,11 +42,9 @@ public class MotosServiceTests
     [Fact]
     public async Task CreateMoto_ShouldReturnError_WhenPlacaExists()
     {
-        // Arrange
         var options = CreateNewContextOptions("TestDb_CreateFailure");
         var existingMoto = new Moto(2020, "Yamaha Fazer", "XYZ5678");
 
-        // Pre-seed the database
         using (var context = new AppDbContext(options))
         {
             context.Motos.Add(existingMoto);
@@ -59,7 +53,6 @@ public class MotosServiceTests
 
         var request = new AddMotoRequest("Honda Biz", "XYZ5678", 2022);
 
-        // Act & Assert
         using (var context = new AppDbContext(options))
         {
             var service = new MotosService(context);
