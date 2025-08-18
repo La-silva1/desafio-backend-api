@@ -13,10 +13,10 @@ Antes de começar, certifique-se de que você tem os seguintes softwares instala
 
 Com o Docker e o Docker Compose instalados, siga os passos abaixo para executar a aplicação em seu ambiente local.
 
-1.  **Clone o Repositório** (caso ainda não tenha feito):
+1.  **Clone o Repositório**:
     ```bash
     gh repo clone La-silva1/desafio-backend-api
-    
+
 2.  **Construa e Inicie os Contêineres:**
     Na pasta raiz do projeto, execute o seguinte comando:
     ```bash
