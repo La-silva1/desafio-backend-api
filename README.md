@@ -43,7 +43,7 @@ O projeto contém um conjunto de testes unitários para garantir a qualidade e o
 Para executar todos os testes, utilize o seguinte comando na raiz do projeto:
 
 ```bash
-dotnet test
+dotnet test ./Tests
 ```
 
 Este comando irá descobrir e executar todos os testes definidos no projeto de testes e exibirá um resumo dos resultados no terminal.
