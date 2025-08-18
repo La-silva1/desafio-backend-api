@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-// using DesafioBackend.Locacoes;
 
 namespace DesafioBackend.Motos
 {
@@ -10,11 +9,7 @@ namespace DesafioBackend.Motos
         public int Ano { get; init; }
         public string Modelo { get; private set; }
         public string Placa { get; private set; }
-        public Moto()
-        {
-            Modelo = null!;
-            Placa = null!;
-        }
+
         public Moto(int ano, string modelo, string placa)
         {
             Id = Guid.NewGuid();
@@ -22,11 +17,10 @@ namespace DesafioBackend.Motos
             Modelo = modelo;
             Placa = placa;
         }
+
         public void ModificarPlaca(string placa)
         {
             Placa = placa;
         }
-
-        // public ICollection<Locacao> Locacoes { get; set; }
     }
 }
