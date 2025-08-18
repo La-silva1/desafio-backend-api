@@ -45,7 +45,7 @@ for (int i = 1; i <= maxRetries; i++)
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             dbContext.Database.Migrate();
-            logger.LogInformation("Migração realizada com sucesso.", i);
+            logger.LogInformation("Migração realizada com sucesso.");
             break;
         }
     }
