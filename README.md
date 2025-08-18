@@ -15,7 +15,7 @@ Com o Docker e o Docker Compose instalados, siga os passos abaixo para executar 
 
 1.  **Clone o Repositório** (caso ainda não tenha feito):
     ```bash
-    git clone git@github.com:La-silva1/desafio-backend-api.git
+    git clone: git@github.com:La-silva1/desafio-backend-api.git
     cd DesafioBackend
     ```
 
