@@ -8,6 +8,7 @@ Antes de começar, certifique-se de que você tem os seguintes softwares instala
 
 - [Docker](https://www.docker.com/get-started)
 - [Docker Compose](https://docs.docker.com/compose/install/)
+- .NET SDK 9 (para executar os testes)
 
 ## Como Executar a Aplicação
 
@@ -16,6 +17,7 @@ Com o Docker e o Docker Compose instalados, siga os passos abaixo para executar 
 1.  **Clone o Repositório**:
     ```bash
     git clone git@github.com:La-silva1/desafio-backend-api.git
+    ```
     
 2.  **Construa e Inicie os Contêineres:**
     Na pasta raiz do projeto, execute o seguinte comando:
@@ -34,9 +36,22 @@ Com o Docker e o Docker Compose instalados, siga os passos abaixo para executar 
     Para visualizar e interagir com os endpoints disponíveis, acesse a documentação do Swagger UI no seu navegador:
     [http://localhost:8080/swagger](http://localhost:8080/swagger)
 
+## Executando os Testes
+
+O projeto contém um conjunto de testes unitários para garantir a qualidade e o correto funcionamento das regras de negócio.
+
+Para executar todos os testes, utilize o seguinte comando na raiz do projeto:
+
+```bash
+dotnet test
+```
+
+Este comando irá descobrir e executar todos os testes definidos no projeto de testes e exibirá um resumo dos resultados no terminal.
+
 ## Tecnologias Utilizadas
 
 - **Backend:** C# com .NET 9
 - **Banco de Dados:** PostgreSQL
 - **ORM:** Entity Framework Core
+- **Testes:** xUnit
 - **Containerização:** Docker & Docker Compose
