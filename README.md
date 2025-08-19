@@ -19,7 +19,16 @@ Com o Docker e o Docker Compose instalados, siga os passos abaixo para executar 
     git clone git@github.com:La-silva1/desafio-backend-api.git
     ```
     
-2.  **Construa e Inicie os Contêineres:**
+2.  **Configuração do Banco de Dados (Opcional para Desenvolvimento Local)**:
+    Se você deseja executar a aplicação fora do Docker Compose ou ajustar as configurações do banco de dados para desenvolvimento local, crie uma cópia do arquivo `appsettings.json` e renomeie-a para `appsettings.Development.json`.
+
+    Você pode fazer isso executando o seguinte comando na raiz do projeto:
+    ```bash
+    cp appsettings.json appsettings.Development.json
+    ```
+    Ajuste as informações de conexão com o banco de dados conforme necessário neste novo arquivo.
+
+3.  **Construa e Inicie os Contêineres:**
     Na pasta raiz do projeto, execute o seguinte comando:
     ```bash
     docker-compose up --build
