@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DesafioBackend.csproj" />
-    <ProjectReference Include="DesafioBackend.IntegrationTests\DesafioBackend.IntegrationTests.csproj" />
   </ItemGroup>
 
 </Project>

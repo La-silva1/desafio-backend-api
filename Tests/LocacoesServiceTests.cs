@@ -1,7 +1,7 @@
 using DesafioBackend.Data;
 using DesafioBackend.Locacoes;
-using DesafioBackend.Entregadores; // Needed for Entregador
-using DesafioBackend.Motos; // Needed for Moto
+using DesafioBackend.Entregadores; 
+using DesafioBackend.Motos; 
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 using System.Threading.Tasks;
@@ -24,24 +24,23 @@ public class LocacoesServiceTests
     {
         var options = CreateNewContextOptions("TestDb_Locacao_CreateSuccess");
 
-        // Arrange: Create a mock Entregador and Moto, as CreateLocacao depends on them existing
-        var entregadorId = Guid.NewGuid(); // Changed to Guid
-        var motoId = Guid.NewGuid();     // Changed to Guid
+        var entregadorId = Guid.NewGuid(); 
+        var motoId = Guid.NewGuid();     
 
         var mockEntregador = new Entregador(
             "Entregador Teste",
             "12345678901234",
             new DateTime(1990, 1, 1),
             "12345678901",
-            "A", // CNH type 'A' is required for motorcycle rental
+            "A", 
             ""
-        ) { Id = entregadorId }; // Assign Guid directly
+        ) { Id = entregadorId }; 
 
-        var mockMoto = new Moto( // Corrected constructor arguments
+        var mockMoto = new Moto( 
             2020,
             "Modelo Teste",
             "ABC-1234"
-        ) { Id = motoId }; // Assign Guid directly
+        ) { Id = motoId }; 
 
         using (var context = new AppDbContext(options))
         {
@@ -50,7 +49,6 @@ public class LocacoesServiceTests
             await context.SaveChangesAsync();
         }
 
-        // Define plan details (mimicking LocacoesService)
         var planos = new Dictionary<string, (int duracaoDias, decimal custoDiario)>
         {
             { "7 dias", (7, 30.00m) },
@@ -70,9 +68,9 @@ public class LocacoesServiceTests
             EntregadorId = entregadorId,
             MotoId = motoId,
             Plano = planoEscolhido,
-            DataInicio = dataInicioLocacao, // Added required field
-            DataTermino = dataPrevisaoTermino, // Added required field (for successful scenario)
-            DataPrevisaoTermino = dataPrevisaoTermino // Added required field
+            DataInicio = dataInicioLocacao, 
+            DataTermino = dataPrevisaoTermino, 
+            DataPrevisaoTermino = dataPrevisaoTermino 
         };
 
         using (var context = new AppDbContext(options))
@@ -80,14 +78,13 @@ public class LocacoesServiceTests
             var service = new LocacoesService(context);
             var (result, errorMessage) = await service.CreateLocacao(request);
 
-            // Assert
             Assert.Null(errorMessage);
             Assert.NotNull(result);
             Assert.Equal(request.EntregadorId, result.EntregadorId);
             Assert.Equal(request.MotoId, result.MotoId);
             Assert.Equal(request.Plano, result.Plano);
-            Assert.True(result.DataInicio > DateTime.MinValue); // Check if date is set
-            Assert.True(result.DataPrevisaoTermino > DateTime.MinValue); // Check if date is set
+            Assert.True(result.DataInicio > DateTime.MinValue); 
+            Assert.True(result.DataPrevisaoTermino > DateTime.MinValue); 
         }
     }
 }

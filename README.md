@@ -38,37 +38,15 @@ Com o Docker e o Docker Compose instalados, siga os passos abaixo para executar 
 
 ## Executando os Testes
 
-O projeto contém conjuntos de testes unitários e de integração para garantir a qualidade e o correto funcionamento das regras de negócio e a interação entre os componentes.
+O projeto contém um conjunto de testes unitários para garantir a qualidade e o correto funcionamento das regras de negócio.
 
-### Testes Unitários
-
-Os testes unitários estão localizados na pasta `Tests` e verificam a lógica de negócio de forma isolada.
-
-Para executar todos os testes unitários, utilize o seguinte comando na raiz do projeto:
-
-```bash
-dotnet test ./Tests/DesafioBackend.Tests.csproj
-```
-
-### Testes de Integração
-
-Os testes de integração estão localizados na pasta `Tests/DesafioBackend.IntegrationTests` e verificam a interação entre diferentes componentes da aplicação, incluindo os endpoints da API.
-
-Para executar todos os testes de integração, utilize o seguinte comando na raiz do projeto:
-
-```bash
-dotnet test ./Tests/DesafioBackend.IntegrationTests/DesafioBackend.IntegrationTests.csproj
-```
-
-### Executar Todos os Testes
-
-Para executar todos os testes (unitários e de integração), utilize o seguinte comando na raiz do projeto:
+Para executar todos os testes, utilize o seguinte comando na raiz do projeto:
 
 ```bash
 dotnet test ./Tests
 ```
 
-Este comando irá descobrir e executar todos os testes definidos nos projetos de testes e exibirá um resumo dos resultados no terminal.
+Este comando irá descobrir e executar todos os testes definidos no projeto de testes e exibirá um resumo dos resultados no terminal.
 
 ## Tecnologias Utilizadas
 
