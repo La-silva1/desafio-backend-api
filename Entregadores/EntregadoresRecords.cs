@@ -19,7 +19,7 @@ public record AddEntregadorRequest
     public required string TipoCNH { get; init; }
 
     [JsonPropertyName("foto_cnh")]
-    public string FotoCNH { get; init; }
+    public string FotoCNH { get; init; } = string.Empty;
 }
 public record AddEntregadorCnh
 {
